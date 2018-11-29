@@ -32,6 +32,7 @@ import time
 test=pd.read_csv('/Users/vickywinter/Documents/NYC/Machine Learning Proj/Data/all/test.csv')
 train=pd.read_csv('/Users/vickywinter/Documents/NYC/Machine Learning Proj/Data/all/train.csv')
 all_data=pd.concat([train,test])
+all_data=all_data.drop(columns=['Id'])
 
 id_num=len(train)
 
@@ -43,10 +44,10 @@ def data_engineering(all_data,id_num):
     all_data=all_data.drop(columns=['YrSold', 'MoSold'])
     
     """
-        Cleaning high collinearity variables
-    """    
-    train=all_data[all_data["Id"]<=id_num]
-    test=all_data[all_data["Id"]>id_num]
+       2. Cleaning high collinearity variables
+    """
+    train=all_data[all_data["SalePrice"]>0]
+    test=all_data[all_data["SalePrice"].isnull()]
     corrmat = train.corr()
     plt.subplots(figsize=(12, 9))
     sns.heatmap(corrmat, vmax=.8, square=True);
@@ -62,7 +63,7 @@ def data_engineering(all_data,id_num):
     all_data=all_data.drop(columns=['TotalBsmtSF'])
 
     """
-       Cleaning missing value
+       3. Cleaning missing value
     """
     missing_value=pd.DataFrame({'miss':all_data.isnull().sum(),'ratio':(all_data.isnull().sum() / len(all_data)) * 100})
     missing_value=missing_value.sort_values(by=['miss'],ascending=False)
@@ -87,8 +88,8 @@ def data_engineering(all_data,id_num):
     missing_value=missing_value.sort_values(by=['miss'],ascending=False)
     all_data["GarageCars"] = all_data["GarageCars"].fillna(0)
     
-    train=all_data[all_data["Id"]<=id_num]
-    test=all_data[all_data["Id"]>id_num]
+    train=all_data[all_data["SalePrice"]>0]
+    test=all_data[all_data["SalePrice"].isnull()]
     
     """
        4.Cleaning outlier
@@ -113,6 +114,14 @@ def data_engineering(all_data,id_num):
     cols=['SalePrice', 'OverallQual', 'GrLivArea', 'GarageCars', '1stFlrSF','Bath', 'TotRmsAbvGrd','YearBuilt','YearRemodAdd','MasVnrArea']
     sns.pairplot(train[cols], size = 2.5)
     plt.show();
+    
+    plt.scatter(train['GrLivArea'],train['SalePrice'])
+    plt.xlabel('Ground Living Area')
+    plt.ylabel('Sale Price')
+    
+    plt.scatter(train['OverallQual'],train['SalePrice'])
+    plt.xlabel('Overall Quality')
+    plt.ylabel('Sale Price')
     
     train = train.drop(train[(train['GrLivArea']>4000) & (train['SalePrice']<300000)].index)
     sns.set()

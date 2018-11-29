@@ -5,6 +5,7 @@ Created on Mon Nov 26 21:28:01 2018
 
 @author: vickywinter
 """
+import xgboost as xgb
 
 def RandomForest(train_linear, test_linear):
     #train=train.drop(columns=['DateSold'])
@@ -44,11 +45,11 @@ def RandomForest(train_linear, test_linear):
     # we can explicitly specify every combination of settings to try. 
     param_grid = {
         'bootstrap': [False],
-        'max_depth': [80, 90, 100, 110,120,130],
+        'max_depth': [80,90,100,110,120],
         'max_features': [2, 3],
         'min_samples_leaf': [1,2,3, 4],
-        'min_samples_split': [2,4,6,8, 10, 12],
-        'n_estimators': [600,700, 800, 900, 1000]
+        'min_samples_split': [2,4,6,8, 10],
+        'n_estimators': [300,400,500,600]
     }
     # Create a based model
     rf = RandomForestRegressor()
@@ -57,6 +58,8 @@ def RandomForest(train_linear, test_linear):
     #grid_search.fit(x_train, y_train)
     grid_search.fit(X_train, Y_train)
     grid_search.best_params_
+    
+    
     
     best_random = grid_search.best_estimator_
     start=time.time()
@@ -81,6 +84,8 @@ def RandomForest(train_linear, test_linear):
     plt.xlabel('Feature Importance')
     
     test_prediction_rf=np.expm1(best_random.predict(test_linear))
+    write_pkl(best_random, '/Users/vickywinter/Documents/NYC/Machine Learning Proj/Pickle/rf_params.pkl')
+    return test_prediction_rf
     
 
 def XgBoost(train_linear, test_linear):
@@ -106,7 +111,7 @@ def XgBoost(train_linear, test_linear):
     xgb_random.fit(X_train, Y_train)
     xgb_random.best_params_
     
-    
+    from xgboost import XGBRegressor
     """
     best_params_={'learning_rate': 0.1,
      'max_depth': 2,
@@ -133,6 +138,7 @@ def XgBoost(train_linear, test_linear):
     plt.ylabel('Predict Sle Price')
     importance_xgb = pd.DataFrame({'features':train_linear_fea.columns, 'imp':model_xgb.feature_importances_}).\
                             sort_values('imp',ascending=False)
+    importance_xgb=importance_xgb[importance_xgb['features']!='Id']
     
     importance_top20_xgb = importance_xgb.iloc[:20,]
     
@@ -140,3 +146,5 @@ def XgBoost(train_linear, test_linear):
     plt.xlabel('Feature Importance')
     
     test_prediction_xgb=np.expm1(model_xgb.predict(test_linear))
+    write_pkl(xgb_random.best_params_, '/Users/vickywinter/Documents/NYC/Machine Learning Proj/Pickle/xgb_params.pkl')
+    return test_prediction_xgb

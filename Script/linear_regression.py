@@ -8,18 +8,9 @@ Created on Mon Nov 26 18:19:06 2018
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-import sklearn.model_selection
-#from sklearn.cross_validation import train_test_split
-from sklearn.preprocessing import scale 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import Ridge, RidgeCV, Lasso, LassoCV
 from sklearn.metrics import mean_squared_error
-from sklearn.ensemble import RandomForestRegressor
-import xgboost as xgb
-from xgboost import XGBRegressor
-from sklearn.model_selection import RandomizedSearchCV
-from sklearn.model_selection import GridSearchCV
 import time
 
 def evaluate(model, test_features, test_labels,train_features, train_labels):
@@ -30,13 +21,27 @@ def evaluate(model, test_features, test_labels,train_features, train_labels):
     print('Model Performance')
     print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
     print('Accuracy = {:0.2f}%.'.format(accuracy))    
-    print("MSE for train data is: %f" % mean_squared_error(y_train, model.predict(x_train)))
-    print("MSE for validation data is: %f" % mean_squared_error(y_test, model.predict(x_test)))
+    print("MSE for train data is: %f" % mean_squared_error(train_labels, model.predict(train_features)))
+    print("MSE for validation data is: %f" % mean_squared_error(test_labels, model.predict(test_features)))
     return accuracy
-    
+
+
+
+def write_pkl(my_dict, opt_path):
+    """Writes a dictionary to a pickle
+    Keyword arguments
+    -----------------
+    my_dict -- A dictionary
+    opt_path -- Name to save the pickle as
+    """
+    # Save dictionary to pickle
+    with open(opt_path, 'wb') as f:
+        pickle.dump(my_dict, f)
+
 def Lasso_model(train_linear, test_linear):
     train_linear_fea=train_linear.drop(columns=['SalePrice'])
     train_linear_tar=train_linear.SalePrice
+    real_train_tar=np.expm1(train_linear_tar)
     x_train, x_test, y_train, y_test = train_test_split(train_linear_fea, train_linear_tar,test_size=0.2, random_state=0)
     real_train_tar=np.expm1(train_linear_tar)
     """
@@ -67,15 +72,14 @@ def Lasso_model(train_linear, test_linear):
     plt.xlabel('Actual Sale Price')
     plt.ylabel('Predict Sle Price')
     
-def Ridge_model(train_linear, test_linear):
-    train_linear_fea=train_linear.drop(columns=['SalePrice'])
-    train_linear_tar=train_linear.SalePrice
-    x_train, x_test, y_train, y_test = train_test_split(train_linear_fea, train_linear_tar,test_size=0.2, random_state=0)
-    real_train_tar=np.expm1(train_linear_tar)
+    test_prediction_lasso=np.expm1(lasso.predict(test_linear))
+    write_pkl(lassocv_alpha, '/Users/vickywinter/Documents/NYC/Machine Learning Proj/Pickle/lasso_params.pkl')
+    return test_prediction_lasso
     
+def Ridge_model(train_linear, test_linear):
     ridgecv = RidgeCV(alphas = np.logspace(-5, 4, 400))
-    ridgecv.fit(x_train, y_train)
-    ridgecv_score = ridgecv.score(x_train, y_train)
+    ridgecv.fit(train_linear_fea, train_linear_tar)
+    ridgecv_score = ridgecv.score(train_linear_fea, train_linear_tar)
     ridgecv_alpha = ridgecv.alpha_
     print("Best alpha : ", ridgecv_alpha, "Score: ",ridgecv_score)
     coef=pd.Series(ridgecv.coef_, index=x_train.columns).sort_values(ascending =False)
@@ -83,6 +87,7 @@ def Ridge_model(train_linear, test_linear):
     start=time.time()
     ridge =Ridge(normalize = True)
     ridge.set_params(alpha=ridgecv_alpha,max_iter = 10000)
+    #ridge.set_params(alpha=6,max_iter = 10000)
     ridge.fit(x_train, y_train)
     end=time.time()
     mean_squared_error(y_test, ridge.predict(x_test))
@@ -99,5 +104,7 @@ def Ridge_model(train_linear, test_linear):
     plt.ylabel('Predict Sle Price')
     
     test_prediction_ridge=np.expm1(ridge.predict(test_linear))
+    write_pkl(ridgecv_alpha, '/Users/vickywinter/Documents/NYC/Machine Learning Proj/Pickle/ridge_params.pkl')
+    return test_prediction_ridge
     
     
